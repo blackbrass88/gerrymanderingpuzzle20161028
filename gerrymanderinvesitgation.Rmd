@@ -67,7 +67,7 @@ plot(g, vertex.color=V(g)$color,
 
 Determine all possible district configurations of 5 voters
 
-```{r}
+```{r, eval=FALSE}
 districts <- NULL
 for (j in 1:25) {
     print(paste("Square",j))
@@ -80,6 +80,13 @@ for (j in 1:25) {
 }
 districts <- matrix(districts, ncol=5, byrow=T)
 ```
+
+Since the above takes a long time, we'll just load the saved results
+
+```{r}
+districts <- readRDS("DistrictsSimple.rds")
+```
+
 
 Remove repeated districts
 
