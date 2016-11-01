@@ -1,0 +1,96 @@
+---
+title: "Gerrymandering Puzzle"
+output: html_notebook
+---
+
+#Riddle
+
+Imagine your job is to draw districts and you happen to be a member of the Blue Party. The grid below gives the locations of 25 voters in a region, which you must divide into five districts with five voters each. In each district, the party with the most votes will win. The districts must be non-overlapping and contiguous (that is, each square in a district must share an edge with at least one other square in the district). Can you draw the districts such that the Blue Party wins more districts than the Red Party?
+
+![Region with 25 Voters](http://i1.wp.com/espnfivethirtyeight.files.wordpress.com/2016/10/screen-shot-2016-10-25-at-2-09-59-pm.png?quality=90&strip=all&w=518&ssl=1)
+
+From: http://fivethirtyeight.com/features/rig-the-election-with-math/
+
+
+#Exploration
+
+## Reproduce Region Picture
+
+Based on boggle board generation from https://gist.github.com/Zelazny7/fd396b5cb0fed713048c
+
+```{r}
+library(igraph)
+findNeighbors <- function(v, row, col) {
+  # look in every direction starting with North  
+  nbrs <- c(
+    v[max(row - 1, 1), col], # N
+    v[row, min(col + 1, ncol(v))], # E
+    v[min(row + 1, nrow(v)), col], # S
+    v[row, max(col - 1, 1)] # W
+    )  
+  return(unique(nbrs))  
+}
+
+v <- matrix(1:25, 5, 5, byrow = T)
+l <- list()
+for (row in 1:nrow(v)) {
+  for (col in 1:ncol(v)) {
+    # find bordering cells for each node    
+    l[[col + nrow(v) * (row - 1)]] <- findNeighbors(v, row, col)
+  }
+}
+
+# create the igraph
+elist <- do.call(rbind, lapply(seq_along(l), function(i) cbind(i, l[[i]])))
+g <- simplify(graph.edgelist(elist, directed=F))
+plot(g)
+```
+
+Add colors and display as solid grid
+
+```{r}
+V(g)$color <- c("red","red","red","red","blue",
+                "red","red","blue","blue","red",
+                "blue","red","red","red","red",
+                "red","blue","blue","red","blue",
+                "blue","blue","red","red","red"
+                )
+
+
+plot(g, vertex.color=V(g)$color,
+     vertex.shape="square",
+     layout = layout.grid,
+     vertex.size=50,
+     edge.width=0,
+     edge.color="white")
+```
+
+Determine all possible district configurations of 5 voters
+
+```{r}
+districts <- NULL
+for (j in 1:25) {
+    print(paste("Square",j))
+    distNew <- all_simple_paths(g,j)
+    for (i in 1:length(distNew)) {
+    if (length(distNew[[i]]) == 5) {
+        districts <- c(districts,as.vector(distNew[[i]]))
+        }
+    }
+}
+districts <- matrix(districts, ncol=5, byrow=T)
+```
+
+Remove repeated districts
+
+```{r}
+for (i in 1:nrow(districts)) {
+    districts[i,] <- sort(districts[i,])
+}
+distUniq <- unique(districts)
+distUniq
+```
+
+
+
+
